@@ -2,6 +2,7 @@ package com.example.paskevich.imprecity;
 
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -11,11 +12,19 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.paskevich.imprecity.IAPI.APIService;
+import com.example.paskevich.imprecity.Models.User;
+import com.example.paskevich.imprecity.utils.ApiUtils;
+
 import butterknife.ButterKnife;
 import butterknife.InjectView;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class SignupActivity extends AppCompatActivity {
     private static final String TAG = "SignupActivity";
+    private APIService mAPIService;
 
     @InjectView(R.id.input_name) EditText _nameText;
     @InjectView(R.id.input_email) EditText _emailText;
@@ -28,6 +37,8 @@ public class SignupActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signup);
         ButterKnife.inject(this);
+        mAPIService = ApiUtils.getAPIService();
+
 
         _signupButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -66,7 +77,29 @@ public class SignupActivity extends AppCompatActivity {
         String password = _passwordText.getText().toString();
 
         // TODO: Implement your own signup logic here.
+        mAPIService.signup(name, email, password).enqueue(new Callback<User>() {
+            @Override
+            public void onResponse(Call<User> call, Response<User> response) {
+                if (response.isSuccessful()){
+                    onSignupSuccess();
+                    progressDialog.dismiss();
+                    Intent intent = new Intent(getApplicationContext(), TabbedActivity.class);
+                    startActivity(intent);
+                }else{
+                    onSignupFailed();
+                    progressDialog.dismiss();
+                }
+            }
 
+            @Override
+            public void onFailure(Call<User> call, Throwable t) {
+                onSignupFailed();
+                progressDialog.dismiss();
+            }
+        });
+
+
+        /*
         new android.os.Handler().postDelayed(
                 new Runnable() {
                     public void run() {
@@ -77,6 +110,7 @@ public class SignupActivity extends AppCompatActivity {
                         progressDialog.dismiss();
                     }
                 }, 3000);
+        */
     }
 
 
@@ -87,7 +121,7 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     public void onSignupFailed() {
-        Toast.makeText(getBaseContext(), "Login failed", Toast.LENGTH_LONG).show();
+        Toast.makeText(getBaseContext(), "Signup failed", Toast.LENGTH_LONG).show();
 
         _signupButton.setEnabled(true);
     }
